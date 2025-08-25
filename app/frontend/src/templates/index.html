@@ -1,0 +1,382 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Interface - Component Based</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        // This is how the client Javascript knows which backend to call
+        window.BACKEND_URL = "{{BACKEND_URL}}";
+        window.MOD_AGENT_URL = "{{MOD_AGENT_URL}}";
+        window.DECOMPOSE_ENDPOINT = "{{DECOMPOSE_ENDPOINT}}";
+        window.USER_TOKEN = "{{USER_TOKEN}}"
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar overlay for mobile -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+        
+        <!-- Settings toggle button for mobile -->
+        <button class="settings-toggle-btn" id="mobile-settings-toggle">
+            <i class="fas fa-cog"></i>
+        </button>
+        
+        <!-- Left sidebar for advanced settings -->
+        <div class="sidebar" id="settings-sidebar">
+            <!-- Desktop header -->
+            <div class="sidebar-header">
+                <h2>Advanced Settings</h2>
+                <span class="back-arrow">&lt;</span>
+            </div>
+            
+            <!-- Mobile-specific header -->
+            <div class="sidebar-mobile-header">
+                <h2>Advanced Settings</h2>
+                <button class="close-sidebar" id="close-sidebar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- System Prompt Section -->
+            <div class="settings-section">
+                <h3>System Prompt</h3>
+                <div class="system-prompt-container">
+                    <textarea id="system-prompt" class="system-prompt-editor">You are a helpful AI assistant.</textarea>
+                </div>
+            </div>
+            
+            <!-- Response Format Section -->
+            <div class="settings-section">
+                <div class="setting-item expandable" id="response-format">
+                    <div class="setting-header">
+                        <i class="fas fa-code"></i>
+                        <span>Response Format</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="setting-content">
+                        <h3>Structured Output</h3>
+                        <p>Paste JSON schema for structured output</p>
+                        <textarea id="structured-output" class="json-editor"></textarea>
+                    </div>
+                </div>
+                
+                <!-- Context Length Section -->
+                <div class="setting-item expandable" id="context-length">
+                    <div class="setting-header">
+                        <i class="fas fa-align-left"></i>
+                        <span>Context Length</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="setting-content">
+                        <div class="slider-container">
+                            <input type="range" min="1000" max="128000" value="4000" class="setting-slider" id="context-length-slider">
+                            <div class="slider-value-container">
+                                <span id="context-length-value">4000</span> tokens
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Temperature Section -->
+                <div class="setting-item expandable" id="temperature">
+                    <div class="setting-header">
+                        <i class="fas fa-thermometer-half"></i>
+                        <span>Temperature</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="setting-content">
+                        <div class="slider-container">
+                            <input type="range" min="0" max="1" step="0.01" value="0.7" class="setting-slider" id="temperature-slider">
+                            <div class="slider-value-container">
+                                <span id="temperature-value">0.7</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Top K Section -->
+                <div class="setting-item expandable" id="top-k">
+                    <div class="setting-header">
+                        <i class="fas fa-layer-group"></i>
+                        <span>Top K Sampling</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="setting-content">
+                        <div class="slider-container">
+                            <input type="range" min="1" max="100" value="40" class="setting-slider" id="top-k-slider">
+                            <div class="slider-value-container">
+                                <span id="top-k-value">40</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chunk Size Section -->
+                <div class="setting-item expandable" id="chunk-size">
+                    <div class="setting-header">
+                        <i class="fas fa-puzzle-piece"></i>
+                        <span>Chunk Size</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="setting-content">
+                        <div class="slider-container">
+                            <input type="range" min="100" max="4000" step="100" value="1000" class="setting-slider" id="chunk-size-slider">
+                            <div class="slider-value-container">
+                                <span id="chunk-size-value">1000</span> tokens
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main content area -->
+        <div class="main-content">
+            <!-- Top navigation bar -->
+            <div class="top-nav">
+                <div class="model-selector-container">
+                    <div class="model-selector" id="model-dropdown-button">
+                        <span id="selected-model-display">Select a Model</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="model-dropdown" id="model-dropdown">
+                        {% for vendor in vendors %}
+                        <div class="vendor-group">
+                            <div class="vendor-header" data-vendor-id="{{ vendor.id }}">
+                                <span>{{ vendor.name }}</span>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                            <div class="vendor-models" id="vendor-{{ vendor.id }}-models">
+                                {% for model in vendor.models %}
+                                <div class="model-option" data-model-id="{{ model.id }}" data-model-name="{{ model.name }}" data-vendor="{{ vendor.name }}">
+                                    {{ model.name }}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="mode-toggles">
+                    <div class="mode-toggle">
+                        <span>Advanced Mode</span>
+                        <label class="switch">
+                            <input type="checkbox" id="advanced-mode-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="mode-toggle">
+                        <span>Decompose</span>
+                        <label class="switch">
+                            <input type="checkbox" id="decompose-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chat area -->
+            <div class="chat-container" id="chat-container">
+                <!-- Example of the 4-column layout to be generated by JavaScript -->
+                <div class="message-group" id="example-message" style="display: none;">
+                    <!-- User Prompt Column -->
+                    <div class="user-column">
+                        <div class="user-prompt">
+                            <div class="bubble-header">
+                                User Prompt
+                                <div class="bubble-actions"></div>
+                            </div>
+                            <div class="bubble-content">Enter your prompt here</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Main Response Column -->
+                    <div class="response-column">
+                        <div class="main-response">
+                            <div class="bubble-header">
+                                Chatbot Response
+                                <div class="bubble-actions">
+                                    <i class="fas fa-edit bubble-action" title="Edit"></i>
+                                    <i class="fas fa-chevron-up bubble-action" title="Collapse"></i>
+                                </div>
+                            </div>
+                            <div class="bubble-content">Main response content</div>
+                        </div>
+                        <div class="action-buttons-container">
+                            <button class="decompose-button" id="decompose-response">
+                                <i class="fas fa-sitemap"></i> Decompose
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Components Column -->
+                    <div class="components-column">
+                        <div class="components-header">
+                            Components
+                            <div><i class="fas fa-chevron-up components-toggle" title="Collapse"></i></div>
+                        </div>
+                        <div class="components-list">
+                            <!-- Component example -->
+                            <div class="component">
+                                <div class="component-header">
+                                    Component Name
+                                    <div class="component-actions">
+                                        <i class="fas fa-edit component-action" title="Edit"></i>
+                                        <i class="fas fa-chevron-up component-action" title="Collapse"></i>
+                                    </div>
+                                </div>
+                                <div class="component-content">Component content</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Final Output Column -->
+                    <div class="final-output-column">
+                        <div class="final-output">
+                            <div class="bubble-header">
+                                Final Output
+                                <div class="bubble-actions">
+                                    <i class="fas fa-edit bubble-action" title="Edit"></i>
+                                    <i class="fas fa-copy bubble-action" title="Copy to clipboard"></i>
+                                </div>
+                            </div>
+                            <div class="bubble-content"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feedback widget moved above input area -->
+            <div id="feedback-widget">
+                <button class="feedback-btn" id="feedback-btn">Give Feedback</button>
+                <div class="feedback-modal" id="feedback-modal">
+                    <div class="feedback-content">
+                        <span class="feedback-close" id="feedback-close">&times;</span>
+                        <form id="feedback-form">
+                            <h3>Please rate your experience using the MOD app</h3>
+                            <p>1 = Strongly Disagree, 2 = Disagree, 3 = Neutral, 4 = Agree, 5 = Strongly Agree</p>
+                            <br><br>
+                            <div class="question">
+                                <label>1. I think that I would like to use this system frequently.</label>
+                                <div class="rating-row" id="q1">
+                                    <span>1</span>
+                                    <input type="range" name="q1" min="1" max="5" value="3" step="1" class="setting-slider rating-slider">
+                                    <span>5</span>
+                                </div>
+                            </div>
+                            <div class="question">
+                                <label>2. I found the system unnecessarily complex.</label>
+                                <div class="rating-row" id="q2">
+                                    <span>1</span>
+                                    <input type="range" name="q2" min="1" max="5" value="3" step="1" class="setting-slider rating-slider">
+                                    <span>5</span>
+                                </div>
+                            </div>
+                            <div class="question">
+                                <label>3. I thought the system was easy to use.</label>
+                                <div class="rating-row" id="q3">
+                                    <span>1</span>
+                                    <input type="range" name="q3" min="1" max="5" value="3" step="1" class="setting-slider rating-slider">
+                                    <span>5</span>
+                                </div>
+                            </div>
+                            <div class="question">
+                                <label>4. I think that I would need the support of a technical person to be able to use this system.</label>
+                                <div class="rating-row" id="q4">
+                                    <span>1</span>
+                                    <input type="range" name="q4" min="1" max="5" value="3" step="1" class="setting-slider rating-slider">
+                                    <span>5</span>
+                                </div>
+                            </div>
+                            <div class="question">
+                                <label>5. I found the various functions in this system were well integrated.</label>
+                                <div class="rating-row" id="q5">
+                                    <span>1</span>
+                                    <input type="range" name="q5" min="1" max="5" value="3" step="1" class="setting-slider rating-slider">
+                                    <span>5</span>
+                                </div>
+                            </div>
+                            <div class="question">
+                                <label>6. I thought there was too much inconsistency in this system.</label>
+                                <div class="rating-row" id="q6">
+                                    <span>1</span>
+                                    <input type="range" name="q6" min="1" max="5" value="3" step="1" class="setting-slider rating-slider">
+                                    <span>5</span>
+                                </div>
+                            </div>
+                            <div class="question">
+                                <label>7. I would imagine that most people would learn to use this system very quickly.</label>
+                                <div class="rating-row" id="q7">
+                                    <span>1</span>
+                                    <input type="range" name="q7" min="1" max="5" value="3" step="1" class="setting-slider rating-slider">
+                                    <span>5</span>
+                                </div>
+                            </div>
+                            <div class="question">
+                                <label>8. I found the system very cumbersome to use.</label>
+                                <div class="rating-row" id="q8">
+                                    <span>1</span>
+                                    <input type="range" name="q8" min="1" max="5" value="3" step="1" class="setting-slider rating-slider">
+                                    <span>5</span>
+                                </div>
+                            </div>
+                            <div class="question">
+                                <label>9. I felt very confident using the system.</label>
+                                <div class="rating-row" id="q9">
+                                    <span>1</span>
+                                    <input type="range" name="q9" min="1" max="5" value="3" step="1" class="setting-slider rating-slider">
+                                    <span>5</span>
+                                </div>
+                            </div>
+                            <div class="question">
+                                <label>10. I needed to learn a lot of things before I could get going with this system.</label>
+                                <div class="rating-row" id="q10">
+                                    <span>1</span>
+                                    <input type="range" name="q10" min="1" max="5" value="3" step="1" class="setting-slider rating-slider">
+                                    <span>5</span>
+                                </div>
+                            </div>
+                            <div class="question comment-question">
+                                <label for="feedback-comments">Additional Comments</label>
+                                <textarea name="comments" id="feedback-comments"></textarea>
+                            </div>
+                            <button type="submit" class="feedback-submit"><i class="fas fa-paper-plane"></i> Submit</button>
+                        </form>
+                        <div id="feedback-thankyou" class="feedback-thankyou" style="display:none;">
+                            Thank you for your feedback!
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input area -->
+            <div class="input-container">
+                <div class="input-area">
+                    <div class="input-prompt">
+                        <i class="fas fa-angle-right prompt-icon"></i>
+                        <input type="text" id="chat-input" placeholder="Enter your prompt here">
+                    </div>
+                    <div class="input-actions">
+                        <button id="upload-button" class="upload-btn">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button id="send-button" class="send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+                <input type="file" id="file-upload" multiple style="display: none">
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

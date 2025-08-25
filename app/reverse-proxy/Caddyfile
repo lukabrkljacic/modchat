@@ -1,0 +1,23 @@
+http://modchat.localhost {
+  handle_path /api/* {
+    reverse_proxy {
+        to {$BACKEND_URL}
+    }
+  }
+  handle_path /agent/* { 
+    reverse_proxy {
+        to {$MOD_AGENT_URL} 
+    }
+  }
+  handle  { 
+    reverse_proxy {
+        to {$FRONTEND_URL}
+    } 
+  }
+}
+
+http://database.modchat.localhost {
+    reverse_proxy {
+        to {$PGADMIN_URL}
+    }
+}

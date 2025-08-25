@@ -1,0 +1,21 @@
+# Server-related
+fastapi[standard]
+werkzeug
+gunicorn
+pydantic
+psycopg[binary,pool]
+
+# Langchain and models
+langchain-community
+langchain-openai
+langchain-anthropic
+langchain-google-genai
+langgraph
+langgraph-checkpoint-postgres
+openai
+anthropic
+a2a-sdk
+
+# Utilities
+typing-extensions
+python-dotenv

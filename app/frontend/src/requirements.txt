@@ -1,0 +1,27 @@
+# Core Flask and utilities
+flask
+python-dotenv
+werkzeug
+gunicorn
+
+
+# Utilities
+pydantic
+tenacity
+typing-extensions
+tqdm
+rich
+requests
+
+# Logging and monitoring
+python-json-logger
+
+# Development
+black
+isort
+flake8
+mypy
+
+# Testing
+pytest
+pytest-cov

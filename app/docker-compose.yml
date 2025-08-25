@@ -1,0 +1,126 @@
+services:
+  caddy:
+    image: caddy:2
+    container_name: caddy
+    ports:
+      - "80:80"
+    volumes:
+      - ./reverse-proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+    # Make Caddy see your internal port env vars used below
+    env_file:
+      - .env
+    depends_on:
+      - frontend
+      - backend
+      - mod-agent
+    networks:
+      - modchat
+
+  frontend:
+    env_file:
+      - ./frontend/.env
+    environment:
+      INTERNAL_BACKEND_URL: ${BACKEND_URL}
+      EXTERNAL_BACKEND_URL: /api
+      FRONTEND_URL: ${FRONTEND_URL}
+      MOD_AGENT_URL: /agent
+    build:
+      target: ${FRONTEND_BUILD_TARGET}
+      context: ./frontend
+      dockerfile: Dockerfile 
+    image: ${FRONTEND_IMAGE_TAG_PREFIX}:${FRONTEND_BUILD_TARGET}-latest
+    container_name: ${FRONTEND_CONTAINER_NAME}
+    hostname: ${FRONTEND_HOSTNAME}
+    expose:
+      - ${FRONTEND_INTERNAL_PORT}
+    networks:
+      modchat:
+        aliases: 
+          - ${FRONTEND_CONTAINER_NAME}
+    volumes:
+      - ./frontend/src:/src
+
+  backend:
+    env_file:
+      - ./backend/.env
+      - ./database/.env
+    build:
+      target: ${BACKEND_BUILD_TARGET}
+      context: ./backend
+      dockerfile: Dockerfile 
+    image: ${BACKEND_IMAGE_TAG_PREFIX}:${BACKEND_BUILD_TARGET}-latest
+    container_name: ${BACKEND_CONTAINER_NAME}
+    hostname: ${BACKEND_HOSTNAME}
+    expose:
+      - ${BACKEND_INTERNAL_PORT}
+    networks:
+      modchat:
+        aliases:
+          - ${BACKEND_CONTAINER_NAME}
+    volumes:
+      - ./backend/src:/src
+
+  mod-agent:
+    env_file:
+      - ./mod-agent/.env
+      - ./database/.env
+    environment:
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      AGENT_BASE_URL: ${MOD_AGENT_URL}
+    build:
+      target: ${MOD_AGENT_BUILD_TARGET}
+      context: ./mod-agent
+      dockerfile: Dockerfile
+    image: ${MOD_AGENT_IMAGE_TAG_PREFIX}:${MOD_AGENT_BUILD_TARGET}-latest
+    container_name: ${MOD_AGENT_CONTAINER_NAME}
+    hostname: ${MOD_AGENT_HOSTNAME}
+    expose:
+      - ${MOD_AGENT_INTERNAL_PORT}
+    networks:
+      modchat:
+        aliases:
+          - ${MOD_AGENT_CONTAINER_NAME}
+    volumes:
+      - ./mod-agent/src:/app/src
+
+  postgres:
+    image: postgres:15
+    container_name: ${POSTGRES_CONTAINER_NAME}
+    hostname: ${POSTGRES_HOSTNAME}
+    restart: unless-stopped
+    env_file:
+      - ./database/.env
+    ports:
+      - ${POSTGRES_PORT_MAPPING}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - modchat
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:7.1
+    container_name: ${PGADMIN_CONTAINER_NAME}
+    hostname: ${PGADMIN_HOSTNAME}
+    env_file:
+      - ./database/.env
+    networks:
+      modchat:
+        aliases:
+          - ${PGADMIN_CONTAINER_NAME}
+    expose:
+      - ${PGADMIN_INTERNAL_PORT}
+    volumes:
+      - dbadmin-data:/var/lib/pgadmin
+    
+networks:
+  modchat:
+
+volumes:
+  postgres_data:
+  dbadmin-data:

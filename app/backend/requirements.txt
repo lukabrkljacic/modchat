@@ -1,0 +1,75 @@
+# Server-related
+fastapi[standard]
+werkzeug
+gunicorn
+httpx
+pydantic
+python-dotenv
+
+# Database
+psycopg[binary,pool]
+langgraph-checkpoint-postgres
+
+# LangChain and models
+langchain
+langchain-community
+langchain-openai
+langchain-anthropic
+langchain-google-genai
+langchain-ollama
+langgraph
+openai
+anthropic
+a2a-sdk
+
+# Utilities
+typing-extensions
+Flask
+# Core FastAPI and utilities
+fastapi[standard]
+python-dotenv
+werkzeug
+gunicorn
+flask-cors
+a2a-sdk
+
+# Langchain and models
+langchain-community
+langchain-openai
+langchain-anthropic
+langchain-google-genai
+langchain-ollama
+langgraph
+langgraph-checkpoint-sqlite
+langgraph-checkpoint-postgres
+openai
+anthropic
+
+# Document handling
+pypdf
+pandas
+openpyxl
+unstructured
+tiktoken
+tabulate
+
+# Utilities
+pydantic
+tenacity
+typing-extensions
+tqdm
+rich
+psycopg[binary,pool]
+
+# Logging and monitoring
+python-json-logger
+
+# Development
+black
+isort
+flake8
+mypy
+
+# Testing
+pytest
+pytest-cov
