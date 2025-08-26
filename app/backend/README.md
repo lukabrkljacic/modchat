@@ -2,6 +2,33 @@
 
 The backend is a FastAPI application that exposes the core API for the Modchat stack. It receives chat and file-upload requests from the frontend, communicates with language model providers, and stores conversation state in Postgres.
 
+
+## Project Structure
+```
+app/backend/
+├── src/
+│   └── mod/
+│       ├── app.py                   # FastAPI endpoints and application wiring
+│       ├── conversation_manager.py  # Session and conversation persistence
+│       ├── file_handlers.py         # File upload handling
+│       ├── errors/                  # Custom exceptions and handlers
+│       ├── enums/                   # Enumerations for model vendors
+│       └── models/
+│           ├── model_factory.py     # Creates client for selected model vendor
+│           └── model_registry.py    # Registry of available models
+├── uploads/                         # Temporary file storage
+├── requirements.txt                 # Python dependencies
+├── env.sample                       # Example environment configuration
+└── Dockerfile                       # Container build instructions
+```
+
+## How it works
+1. `app.py` initializes the FastAPI app and defines endpoints like `/chat` and `/upload`.
+2. Incoming chat requests use `conversation_manager.py` to track sessions and conversations.
+3. `model_factory.py` selects and initializes the correct vendor client before the request is sent to the language model.
+4. Optional files are processed by `file_handlers.py` and included in the prompt.
+5. Results can be sent to the MOD Agent for decomposition before being returned to the frontend.
+
 ## How it fits in
 - **Frontend** – The web client calls the `/chat`, `/upload`, and `/models` endpoints to interact with models and manage files.
 - **Database** – Conversation history and feedback are persisted via the `DATABASE_URL` connection string.  A Postgres and pgAdmin instance are provided by the database service.
