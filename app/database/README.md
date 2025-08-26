@@ -2,6 +2,18 @@
 
 This directory configures the Postgres database used by the Modchat backend. A companion pgAdmin container is provided for inspecting data through the browser.
 
+
+## Project Structure
+```
+app/database/
+└── README.md  # Service documentation and configuration notes
+```
+
+## How it works
+1. Docker Compose launches a PostgreSQL container along with a pgAdmin interface.
+2. The backend connects using the `DATABASE_URL` from the shared `.env` file to store conversations and feedback.
+3. Administrators can reach pgAdmin through the reverse proxy to inspect or manage the database.
+
 ## How it fits in
 - **Backend** – Uses the `DATABASE_URL` defined in `.env` to store conversation memory and feedback.
 - **Reverse Proxy** – Exposes pgAdmin at `http://database.modchat.localhost` for administration.
