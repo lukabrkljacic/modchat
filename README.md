@@ -41,8 +41,8 @@ A modular Flask application packaged for containerized deployment that delivers 
 1. Clone the repo and enter the `app` directory:
 
 ```bash
-git clone https://github.com/martinmarroyo/task_decomposition.git
-cd task_decomposition/app
+git clone <repository-url>
+cd modchat/app
 ```
 
 2. Set up your API keys
@@ -90,7 +90,7 @@ Once the containers finish building, you can go to the main chat interface at: h
 
 ## Project Structure
 ```
-task_decomposition/
+modchat/
 ├── app/
 │   ├── backend/        # FastAPI backend
 │   ├── frontend/       # Frontend interface
